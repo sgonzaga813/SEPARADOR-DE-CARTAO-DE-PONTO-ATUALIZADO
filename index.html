@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SEPARADOR DE CARTÕES DE PONTO POR MATRÍCULA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+window.__xlsxLoader=new Promise(resolve=>{
+  const sources=[
+    "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js",
+    "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+  ];
+  const next=()=>{
+    if(window.XLSX){resolve(true);return;}
+    const src=sources.shift();if(!src){resolve(false);return;}
+    const script=document.createElement("script");script.src=src;script.onload=()=>resolve(!!window.XLSX);script.onerror=next;document.head.appendChild(script);
+  };
+  next();
+});
+</script>
+<style>
+:root{
+  --bg:#F3F5F8; --panel:#FFFFFF; --ink:#1B2430; --muted:#5B6675; --line:#D8DEE6;
+  --brand:#0A57A4; --brand-ink:#FFFFFF; --brand-soft:#E4EEF8;
+  --ok:#1F7A4D; --ok-soft:#E3F2EA; --warn:#9A5B00; --warn-soft:#FBEFD9; --bad:#B3261E; --bad-soft:#FBE4E2;
+  --sel:#0A57A4; --unsel:#C9D1DB;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#12171E; --panel:#1A212B; --ink:#E6EBF1; --muted:#9AA6B5; --line:#2E3845;
+    --brand:#5CA3EC; --brand-ink:#0B1622; --brand-soft:#1C2E44;
+    --ok:#5CC48E; --ok-soft:#173226; --warn:#E3A84C; --warn-soft:#382A14; --bad:#F08A82; --bad-soft:#3A1D1B;
+    --sel:#5CA3EC; --unsel:#394554;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12171E; --panel:#1A212B; --ink:#E6EBF1; --muted:#9AA6B5; --line:#2E3845;
+  --brand:#5CA3EC; --brand-ink:#0B1622; --brand-soft:#1C2E44;
+  --ok:#5CC48E; --ok-soft:#173226; --warn:#E3A84C; --warn-soft:#382A14; --bad:#F08A82; --bad-soft:#3A1D1B;
+  --sel:#5CA3EC; --unsel:#394554;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Source Sans 3","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:16px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:28px 18px 60px}
+header h1{font-size:2rem;line-height:1.15;margin:0 0 8px;letter-spacing:-.01em}
+.brandmark{display:flex;align-items:center;margin:0 0 12px}.brandmark img{display:block;width:170px;height:auto;max-width:48vw}
+body,button,input,select,textarea{ text-transform:uppercase }
+header p{margin:0 0 6px;color:var(--muted);max-width:68ch}
+.privacy{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:6px;background:var(--ok-soft);color:var(--ok);font-weight:600;font-size:.92rem}
+section.step{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;margin-top:18px;display:grid;grid-template-columns:44px 1fr;gap:0 16px}
+.num{width:36px;height:36px;border-radius:50%;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;font-weight:700;font-size:1.1rem}
+.step h2{font-size:1.25rem;margin:4px 0 4px}
+.step .hint{color:var(--muted);margin:0 0 14px;max-width:70ch}
+.body{min-width:0}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:26px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--brand);background:var(--brand-soft)}
+.drop strong{display:block;font-size:1.05rem}
+.drop small{color:var(--muted)}
+.fileinfo{margin-top:10px;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+label.f{display:block;font-weight:600;margin:12px 0 4px}
+select,input[type=text],input[type=number],textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;max-width:100%}
+textarea{width:100%;min-height:120px;resize:vertical;font-variant-numeric:tabular-nums}
+.radio{display:flex;gap:8px;align-items:flex-start;margin:6px 0;cursor:pointer}
+.radio input{margin-top:5px}
+.radio span small{display:block;color:var(--muted)}
+button{font:inherit;font-weight:600;border-radius:6px;padding:9px 16px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,.drop:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.muted{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:680px){.grid2{grid-template-columns:1fr}section.step{grid-template-columns:1fr}.num{margin-bottom:8px}}
+.progress{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:12px;display:none}
+.progress > div{height:100%;width:0;background:var(--brand);transition:width .1s}
+.status{margin-top:8px;color:var(--muted);min-height:1.5em}
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:6px 0 14px}
+.stats div b{display:block;font-size:1.6rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.stats div span{color:var(--muted);font-size:.92rem}
+.meta{margin:0 0 10px;color:var(--muted)}
+.ruler{display:flex;height:34px;border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer;background:var(--unsel)}
+.ruler i{flex:1 1 0;min-width:1px;background:var(--unsel);border-right:1px solid var(--panel)}
+.ruler i.s{background:var(--sel)}
+.ruler i.u{background:var(--warn)}
+.ruler i:last-child{border-right:0}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem;color:var(--muted);margin:6px 0 16px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-1px;margin-right:5px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;max-height:460px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel);z-index:1}
+td.num{font-variant-numeric:tabular-nums}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:.85rem;font-weight:600}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.off{background:var(--bg);color:var(--muted)}
+td a{color:var(--brand);cursor:pointer;text-decoration:underline}
+details{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+summary{font-weight:600;cursor:pointer}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px;max-height:340px;overflow:auto;white-space:pre-wrap;font-size:.85rem}
+.check{display:flex;gap:8px;align-items:center;margin:8px 0;cursor:pointer}
+footer{margin-top:22px;color:var(--muted);font-size:.92rem;max-width:75ch}
+.hidden{display:none!important}
+.err{color:var(--bad);font-weight:600}
+.batch-files{width:100%;border-collapse:collapse;margin-top:12px}
+.batch-files td,.batch-files th{white-space:normal}
+.batch-files input{width:130px}
+.batch-status{font-weight:600;color:var(--muted)}
+.batch-actions{margin-top:14px}
+.batch-results{margin-top:16px}
+.workbook-preview{margin-top:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brandmark"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzk1IiBoZWlnaHQ9IjE0OCIgdmlld0JveD0iMCAwIDM5NSAxNDgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICA8ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPgogICAgICAgIDxwYXRoIGQ9Ik0zMC43NTUgMTEzLjU2NWMuNjQxLTcuMzkgNC43MjItMTMuMDIgMTIuNzgtMTMuMDJzMTEuMjgzIDYuMDMgMTEuNzEgMTMuMDJoLTI0LjQ5em0zNC4xNjQgMTguMjg5Yy01LjM3MiAzLjAxNS0xMS4zOTMgNS42MDEtMTguMzczIDUuNjAxLTguOTIyIDAtMTUuMTUtNS4wNjItMTUuNzkxLTEzLjk4OEg2OUM2OSAxMDQuMDk5IDYzLjIgOTAgNDIuNjc5IDkwIDI1LjQ4NiA5MCAxNyAxMDMuMjM1IDE3IDExOS4yNyAxNyAxMzcuNDU1IDI3LjYzMyAxNDggNDUuODk2IDE0OGM3Ljc0IDAgMTMuNzU1LTEuNDc4IDE5LjAyMy00LjQzNHYtMTEuNzEyeiIgZmlsbD0iIzAwM0Y4NyIvPgogICAgICAgIDxwYXRoIGZpbGw9IiMwMDNGODciIGZpbGwtcnVsZT0ibm9uemVybyIgZD0iTTgyIDE0N2gxNVY2Nkg4MnY4MXoiLz4KICAgICAgICA8cGF0aCBkPSJNMTIyLjc1NSAxMTMuNTY1Yy42NDEtNy4zOSA0LjcyMi0xMy4wMiAxMi43OC0xMy4wMnMxMS4yODMgNi4wMyAxMS43MSAxMy4wMmgtMjQuNDl6bTM0LjE2NCAxOC4yODljLTUuMzcyIDMuMDE1LTExLjM4NSA1LjYwMS0xOC4zNzMgNS42MDEtOC45MjIgMC0xNS4xNS01LjA2Mi0xNS43OTEtMTMuOTg4SDE2MUMxNjEgMTA0LjA5OSAxNTUuMiA5MCAxMzQuNjc5IDkwIDExNy40ODYgOTAgMTA5IDEwMy4yMzUgMTA5IDExOS4yN2MwIDE4LjE4NSAxMC42MzMgMjguNzMgMjguOTA0IDI4LjczIDcuNzMzIDAgMTMuNzQ3LTEuNDc4IDE5LjAxNS00LjQzNHYtMTEuNzEyeiIgZmlsbD0iIzAwM0Y4NyIvPgogICAgICAgIDxwYXRoIGQ9Ik0yMTAuMDEyIDkxLjg0MmE0Ny40NDUgNDcuNDQ1IDAgMCAwLTE0LjA3LTEuODMyYy0xNy40MjEgMC0yNi45NDIgMTIuNy0yNi45NDIgMjguNzI1IDAgMTYuODkgOS4xOTQgMjkuMjY1IDI3LjUgMjkuMjY1IDUuOTQ1IDAgMTAuMjc4LS41NCAxNC41LTEuODMybC0uNjQ3LTExLjk0Yy0yLjQ5IDEuMDcyLTcuMDM4IDIuNTc5LTExLjE0OCAyLjU3OS0xMC4xNzUgMC0xNS4wNDMtNy44NDYtMTUuMDQzLTE4LjA3MiAwLTEwLjQzMiA1LjczOC0xNy41MzIgMTQuNzE2LTE3LjUzMiAzLjQtLjA4OCA2Ljc3My42MSA5Ljg1NSAyLjA0bDEuMjc5LTExLjR6TTIyMiAxNDYuOTkzaDE0Ljczdi0yNy4yNDljMC03LjEzNyAyLjMxMS0xOC40OTMgMTIuOTczLTE4LjQ5MyA5LjQ1MyAwIDkuNTY2IDkuMTg3IDkuNTY2IDE2LjAwNXYyOS43MDdIMjc0di0zNS4xMTRDMjc0IDk5LjMwNiAyNjguMTcxIDkwIDI1NC43NjEgOTBjLTcuNzAxIDAtMTMuOTYgMi40ODgtMTguNTgxIDguODY3aC0uMjJWOTEuM0gyMjJWMTQ3di0uMDA3eiIgZmlsbD0iIzAwM0Y4NyIgZmlsbC1ydWxlPSJub256ZXJvIi8+CiAgICAgICAgPHBhdGggZD0iTTI4NiAxMTkuMzczQzI4NiAxMzUuMjk3IDI5Ni42NSAxNDggMzE0Ljk0OCAxNDggMzMzLjI0NyAxNDggMzQ0IDEzNS4yOTcgMzQ0IDExOS4zNzMgMzQ0IDEwMS4wODQgMzMxLjQzNiA5MCAzMTQuOTQ4IDkwUzI4NiAxMDEuMDg0IDI4NiAxMTkuMzczem0xNS4wNjItMS43MjJjMC04LjI4MyA0LjUyMy0xNi40NTYgMTMuODg2LTE2LjQ1NiA5LjM2NCAwIDEzLjk5IDcuOTU5IDEzLjk5IDE2LjQ1NiAwIDkuMjYtMi45MDQgMTkuMTU0LTEzLjk5IDE5LjE1NC0xMC45NzUgMC0xMy44ODYtMTAuMDA1LTEzLjg4Ni0xOS4xNTR6IiBmaWxsPSIjMDAzRjg3Ii8+CiAgICAgICAgPHBhdGggZD0iTTM1NyAxNDYuOTYzaDE0LjE1VjEyNi41NGMwLTggMC0yMi42OTIgMTEuNTEtMjIuNjkyIDIuNTQgMCA1LjA3OC40MyA2LjM0IDEuMTg3VjkwLjQ1NGExNC45MzYgMTQuOTM2IDAgMCAwLTQuMzUyLS40MzhjLTguNDUgMC0xNC4yNiA4Ljc1Ny0xNC44OSAxMy45NDRoLS4yMVY5MS4zNDVIMzU3VjE0N3YtLjAzN3oiIGZpbGw9IiMwMDNGODciIGZpbGwtcnVsZT0ibm9uemVybyIvPgogICAgICAgIDxwYXRoIGQ9Ik0wIDUzLjI3UzEyNC4wNy0xMy45MDQgMjIwLjY3NyAyLjYxNWM5Ni42MDggMTYuNTItMjcuNjI0IDc5LjMyIDcwLjQ4OCA2OC4wMzlDMzUzLjIyNiA2My41MSAzOTUgMzUuODQ0IDM5NSAzNS44NDRzLTM4LjY5IDE4Ljc5Mi04OC40NyAxMS44NjRjLTgxLjUzMi0xMS4zNC04NS4wOS0yNi40MzUtMTU5LjY5OC0yNi40MzVDNjguMzQ2IDIxLjI3MyAwIDUzLjI3IDAgNTMuMjd6IiBmaWxsPSIjRjQ3QzAwIi8+CiAgICA8L2c+Cjwvc3ZnPgo=" alt="LOGO DA ELECNOR"></div>
+  <h1>Separador de cartões de ponto por matrícula</h1>
+  <p>Carregue o PDF do espelho de ponto da competência. O aplicativo identifica o cartão de cada colaborador e gera um PDF por matrícula, com o nome no arquivo — de todos ou só das matrículas que você informar.</p>
+  <span class="privacy">Nenhum arquivo é enviado para a internet: tudo acontece no seu navegador.</span>
+</header>
+
+<section class="step" id="loteCompetencia">
+  <div class="num">+</div>
+  <div class="body">
+    <h2>LOTE DE CARTÕES POR COMPETÊNCIA</h2>
+    <p class="hint">ADICIONE VÁRIOS PDFs DE COMPETÊNCIAS DIFERENTES. O APLICATIVO LÊ A COMPETÊNCIA DO CARTÃO; SE NÃO ENCONTRAR, INFORME-A NA LISTA. O ZIP TERÁ UMA PASTA POR COMPETÊNCIA E UM PDF POR COLABORADOR.</p>
+    <div class="drop" id="loteDrop" tabindex="0" role="button" aria-label="Adicionar vários PDFs">
+      <strong>ARRASTE OS PDFs AQUI OU CLIQUE PARA ADICIONAR VÁRIOS ARQUIVOS</strong>
+      <small>PDFs COM TEXTO GERADOS PELO SISTEMA DE PONTO.</small>
+    </div>
+    <input type="file" id="loteFiles" accept="application/pdf,.pdf" multiple class="hidden">
+    <div id="loteLista"></div>
+    <div class="row batch-actions">
+      <button type="button" id="importarPlanilha">IMPORTAR PLANILHA EXCEL</button>
+      <button type="button" id="limparPlanilha" disabled>LIMPAR PLANILHA</button>
+      <input type="file" id="arquivoPlanilha" accept=".xlsx,.xls,.csv" class="hidden">
+      <span class="muted" id="planilhaInfo">COLUNAS: MATRÍCULA, NOME, FUNÇÃO E COMPETÊNCIA.</span>
+    </div>
+    <details class="workbook-preview hidden" id="detalhePlanilha">
+      <summary id="resumoPlanilha">CONFERIR PLANILHA IMPORTADA</summary>
+      <div class="tablewrap">
+        <table><thead><tr><th>MATRÍCULA</th><th>NOME</th><th>FUNÇÃO</th><th>COMPETÊNCIA</th></tr></thead><tbody id="previaPlanilha"></tbody></table>
+      </div>
+    </details>
+    <label class="f" for="loteMatriculas">MATRÍCULAS QUE DESEJA GERAR</label>
+    <textarea id="loteMatriculas" placeholder="DIGITE OU COLE AS MATRÍCULAS, SEPARADAS POR VÍRGULA, PONTO E VÍRGULA OU UMA POR LINHA"></textarea>
+    <p class="hint" id="origemListaAjuda">SEM PLANILHA, SOMENTE AS MATRÍCULAS INFORMADAS SERÃO GERADAS. COM PLANILHA, SERÃO CONSIDERADAS AS MATRÍCULAS E COMPETÊNCIAS DE CADA LINHA.</p>
+    <div class="muted" id="loteMatriculaResumo">0 MATRÍCULAS INFORMADAS</div>
+    <div class="row batch-actions">
+      <button type="button" id="analisarLotes">LER OS LOTES E IDENTIFICAR CARTÕES</button>
+      <button type="button" class="primary" id="gerarLotes" disabled>GERAR ZIP POR COMPETÊNCIA</button>
+      <button type="button" id="limparLotes">LIMPAR LOTES</button>
+    </div>
+    <div class="muted" id="salvamentoStatus" role="status">SALVAMENTO AUTOMÁTICO ATIVO NESTE NAVEGADOR.</div>
+    <div class="status" id="loteStatus"></div>
+    <div class="row batch-actions">
+      <label class="check"><input type="checkbox" id="selecionarVisiveis"> SELECIONAR TODOS OS CARTÕES VISÍVEIS</label>
+      <label for="filtroCompetencia">FILTRAR COMPETÊNCIA</label>
+      <select id="filtroCompetencia"><option value="">TODAS AS COMPETÊNCIAS</option></select>
+      <input type="text" id="filtroColaborador" placeholder="FILTRAR MATRÍCULA OU NOME" style="flex:1;min-width:220px">
+    </div>
+    <div class="tablewrap batch-results">
+      <table>
+        <thead><tr><th>GERAR</th><th>COMPETÊNCIA</th><th>ARQUIVO DE ORIGEM</th><th>MATRÍCULA</th><th>NOME</th><th>FUNÇÃO</th><th>DEPARTAMENTO</th><th>PÁGINAS</th><th>SITUAÇÃO</th></tr></thead>
+        <tbody id="loteResultado"><tr><td colspan="9" class="muted">ADICIONE PDFs E INFORME AS MATRÍCULAS.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="step">
+  <div class="num">1</div>
+  <div class="body">
+    <h2>PDF com todos os cartões de ponto</h2>
+    <p class="hint">Pode ser o arquivo inteiro da competência, com centenas ou milhares de páginas.</p>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher arquivo PDF">
+      <strong>Arraste o PDF aqui ou clique para escolher</strong>
+      <small>Apenas PDFs com texto (espelhos gerados pelo sistema de ponto).</small>
+    </div>
+    <input type="file" id="file" accept="application/pdf,.pdf" class="hidden">
+    <div class="fileinfo" id="fileinfo"></div>
+    <div class="progress" id="progress"><div></div></div>
+    <div class="status" id="status"></div>
+  </div>
+</section>
+
+<section class="step">
+  <div class="num">2</div>
+  <div class="body">
+    <h2>Quais cartões separar</h2>
+    <label class="radio"><input type="radio" name="modo" value="todos" checked>
+      <span>Todos os colaboradores do PDF<small>Gera um arquivo por matrícula encontrada.</small></span></label>
+    <label class="radio"><input type="radio" name="modo" value="lista">
+      <span>Somente as matrículas da minha lista<small>Cole as matrículas abaixo ou carregue um CSV.</small></span></label>
+
+    <div id="listaBox" class="hidden">
+      <label class="f" for="lista">Lista de matrículas</label>
+      <textarea id="lista" placeholder="Ex.: 50274, 50311, 50412 ou uma por linha"></textarea>
+      <div class="row">
+        <button type="button" id="btnCsv">Carregar CSV</button>
+        <button type="button" id="btnLimpar">Limpar lista</button>
+        <input type="file" id="csv" accept=".csv,text/csv,.txt" class="hidden">
+        <span class="muted" id="listaCount">0 matrículas</span>
+      </div>
+      <div class="row" id="csvOpts" style="display:none">
+        <label>Coluna do CSV com a matrícula
+          <select id="csvCol"></select></label>
+        <label class="check"><input type="checkbox" id="csvHeader" checked> A primeira linha é cabeçalho</label>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="step">
+  <div class="num">3</div>
+  <div class="body">
+    <h2>Opções dos arquivos</h2>
+    <p class="hint">Páginas sem cabeçalho de matrícula são tratadas como continuação do cartão anterior.</p>
+    <div class="grid2">
+      <div>
+        <label class="f" for="nomeArq">Nome de cada arquivo</label>
+        <select id="nomeArq">
+          <option value="mat-nome">Matrícula - Nome.pdf</option>
+          <option value="nome-mat">Nome - Matrícula.pdf</option>
+          <option value="mat">Matrícula.pdf</option>
+        </select>
+        <label class="check"><input type="checkbox" id="porDepto"> Separar em pastas por departamento no ZIP</label>
+      </div>
+      <div>
+        <label class="f" for="ordem">Ordem no PDF único</label>
+        <select id="ordem">
+          <option value="pdf">Mesma ordem do PDF original</option>
+          <option value="nome">Ordem alfabética por nome</option>
+          <option value="depto">Por departamento e nome</option>
+          <option value="lista">Mesma ordem da minha lista</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:18px">
+      <button type="button" class="primary" id="btnSeparar" disabled>Separar cartões</button>
+      <button type="button" id="btnReset">Recomeçar</button>
+    </div>
+  </div>
+</section>
+
+<section class="step" id="resultado">
+  <div class="num">4</div>
+  <div class="body">
+    <h2>Resultado</h2>
+    <p class="hint">Confira antes de baixar. Clique na régua para ver o texto de qualquer página.</p>
+    <p class="meta" id="meta"></p>
+    <div class="stats">
+      <div><b id="sPag">0</b><span>páginas no PDF</span></div>
+      <div><b id="sCol">0</b><span>cartões identificados</span></div>
+      <div><b id="sPed">0</b><span>matrículas pedidas</span></div>
+      <div><b id="sEnc">0</b><span>encontradas</span></div>
+      <div><b id="sNao">0</b><span>não encontradas</span></div>
+      <div><b id="sSel">0</b><span>páginas selecionadas</span></div>
+    </div>
+    <div class="ruler" id="ruler" title="Régua de páginas"></div>
+    <div class="legend">
+      <span><i style="background:var(--sel)"></i>Selecionada</span>
+      <span><i style="background:var(--unsel)"></i>Não selecionada</span>
+      <span><i style="background:var(--warn)"></i>Sem matrícula identificada</span>
+    </div>
+    <div class="row" style="margin:0 0 10px">
+      <input type="text" id="filtro" placeholder="Filtrar por matrícula, nome ou departamento" style="flex:1;min-width:220px">
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Matrícula</th><th>Nome</th><th>Departamento</th><th>Situação</th><th>Páginas</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="5" class="muted">Carregue um PDF e clique em Separar cartões.</td></tr></tbody>
+      </table>
+    </div>
+    <div class="row" style="margin-top:16px">
+      <button type="button" class="primary" id="btnZip" disabled>Baixar um PDF por matrícula (ZIP)</button>
+      <button type="button" id="btnUnico" disabled>Baixar PDF único</button>
+      <button type="button" id="btnRel" disabled>Baixar relatório em CSV</button>
+    </div>
+    <div class="status" id="status2"></div>
+
+    <details id="det">
+      <summary>Conferir o texto de uma página</summary>
+      <div class="row">
+        <label>Página <input type="number" id="pgNum" min="1" value="1" style="width:100px"></label>
+        <button type="button" id="btnVer">Ver texto</button>
+      </div>
+      <pre id="pgText">Escolha uma página para ver o texto lido pelo aplicativo.</pre>
+    </details>
+  </div>
+</section>
+
+<footer>Dica: guarde o link nos favoritos ou salve este arquivo numa pasta da rede. Funciona no Chrome, Edge e Firefox e precisa de internet apenas para baixar as bibliotecas de leitura de PDF no primeiro carregamento.</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $ = id => document.getElementById(id);
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+let pdfBytes = null, fileName = "", pdfDoc = null;
+let pages = [];        // [{text, mat, nome, depto}]
+let cards = [];        // [{mat, nome, depto, pages:[idx], order}]
+let results = [];      // linhas da tabela
+let selectedCards = [];// cartões que vão para o download
+let competencia = "", periodo = "";
+
+/* ---------- helpers ---------- */
+const normMat = s => String(s).replace(/\D/g,"").replace(/^0+/,"") || "0";
+const sanitize = s => String(s).replace(/[\\/:*?"<>|]+/g,"").replace(/\s+/g," ").trim();
+function setStatus(el, msg, err){ el.textContent = msg; el.className = "status" + (err ? " err" : ""); }
+function progress(p){ const pr=$("progress"); pr.style.display = p==null ? "none" : "block"; pr.firstElementChild.style.width = ((p||0)*100)+"%"; }
+function download(blob, name){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+function pagesLabel(arr){
+  const out=[]; let s=null,p=null;
+  arr.map(i=>i+1).forEach(n=>{ if(s===null){s=p=n;} else if(n===p+1){p=n;} else {out.push(s===p?s:s+"–"+p); s=p=n;} });
+  if(s!==null) out.push(s===p?s:s+"–"+p);
+  return out.join(", ");
+}
+
+/* ---------- leitura do texto por linhas ---------- */
+function toLines(tc){
+  const items = tc.items.filter(it => it.str && it.str.trim() !== "");
+  const rows = [], buckets = new Map();
+  items.forEach(it=>{
+    const y = it.transform[5], x = it.transform[4];
+    const bucket=Math.floor(y/3);let row=null;
+    for(let b=bucket-1;b<=bucket+1&&!row;b++){
+      const candidates=buckets.get(b)||[];row=candidates.find(r=>Math.abs(r.y-y)<3)||null;
+    }
+    if(!row){ row = {y, parts:[]}; rows.push(row);if(!buckets.has(bucket))buckets.set(bucket,[]);buckets.get(bucket).push(row); }
+    row.parts.push({x, s: it.str});
+  });
+  rows.sort((a,b)=>b.y-a.y);
+  return rows.map(r => r.parts.sort((a,b)=>a.x-b.x).map(p=>p.s).join(" ").replace(/\s+/g," ").trim());
+}
+function parsePage(lines){
+  const text = lines.join("\n");
+  let mat = null, nome = "", depto = "";
+  const m = text.match(/MATR[IÍ]CULA\s*:?\s*(\d{2,})/i);
+  if(m) mat = m[1];
+  const a = text.match(/Assinatura\s+colaborador\s*:\s*(.+)/i);
+  if(a) nome = a[1].replace(/\s*Outros\s*$/i,"").trim();
+  if(!nome && m){
+    const li = lines.findIndex(l => /MATR[IÍ]CULA/i.test(l));
+    if(li > 0){
+      const prev = lines[li-1];
+      if(/^[A-ZÀ-Ý'´`\s.-]{5,}$/.test(prev) && !/CNPJ|ENDERE|CEP/i.test(prev)) nome = prev.trim();
+    }
+  }
+  const d = text.match(/DEPARTAMENTO\s+(.+?)\s+(?:CARGO|LOCALIZA)/i);
+  if(d) depto = d[1].trim();
+  const c = text.match(/Compet[êe]ncia\s*:?\s*(\d{2}\/\d{4})/i);
+  const p = text.match(/Per[íi]odo\s+(\d{2}\/\d{2}\/\d{4}\s*a\s*\d{2}\/\d{2}\/\d{4})/i);
+  return {text, mat, nome, depto, comp: c ? c[1] : "", per: p ? p[1] : ""};
+}
+
+/* ---------- arquivo ---------- */
+const drop = $("drop");
+drop.addEventListener("click", ()=>$("file").click());
+drop.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); $("file").click(); }});
+drop.addEventListener("dragover", e=>{ e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", ()=>drop.classList.remove("over"));
+drop.addEventListener("drop", e=>{ e.preventDefault(); drop.classList.remove("over"); if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+$("file").addEventListener("change", e=>{ if(e.target.files[0]) loadFile(e.target.files[0]); });
+
+async function loadFile(f){
+  if(!window.pdfjsLib || !window.PDFLib || !window.JSZip){
+    setStatus($("status"), "As bibliotecas de PDF não carregaram. Verifique a conexão com a internet e recarregue a página.", true); return;
+  }
+  if(!/\.pdf$/i.test(f.name) && f.type !== "application/pdf"){ setStatus($("status"), "Escolha um arquivo .pdf.", true); return; }
+  resetResults();
+  fileName = f.name;
+  $("fileinfo").textContent = f.name + " (" + (f.size/1048576).toFixed(1) + " MB)";
+  $("btnSeparar").disabled = true;
+  try{
+    pdfBytes = new Uint8Array(await f.arrayBuffer());
+    pdfDoc = await pdfjsLib.getDocument({data: pdfBytes.slice()}).promise;
+    const n = pdfDoc.numPages; pages = new Array(n);
+    progress(0);
+    const pageConcurrency=8;
+    for(let start=1;start<=n;start+=pageConcurrency){
+      const end=Math.min(n,start+pageConcurrency-1);
+      await Promise.all(Array.from({length:end-start+1},async(_,offset)=>{
+        const i=start+offset,pg=await pdfDoc.getPage(i);
+        try{const tc=await pg.getTextContent();pages[i-1]=parsePage(toLines(tc));}
+        finally{pg.cleanup();}
+      }));
+      progress(end/n); setStatus($("status"), "LENDO PÁGINAS "+end+" DE "+n+"…"); await new Promise(r=>setTimeout(r));
+    }
+    progress(null);
+    buildCards();
+    const semTexto = pages.every(p => !p.text.trim());
+    if(semTexto){ setStatus($("status"), "O PDF não tem texto legível (parece digitalizado). Use o PDF gerado pelo sistema de ponto.", true); return; }
+    setStatus($("status"), n+" páginas lidas, "+cards.length+" cartões identificados. Agora clique em Separar cartões.");
+    $("btnSeparar").disabled = false;
+  }catch(err){
+    progress(null); console.error(err);
+    setStatus($("status"), "Não foi possível abrir o PDF: " + (err.message||err), true);
+  }
+}
+
+function buildCards(){
+  cards = []; competencia = ""; periodo = "";
+  let cur = null;
+  pages.forEach((p,i)=>{
+    if(!competencia && p.comp) competencia = p.comp;
+    if(!periodo && p.per) periodo = p.per;
+    if(p.mat){
+      if(cur && normMat(cur.mat) === normMat(p.mat)){ cur.pages.push(i); }
+      else { cur = {mat:p.mat, nome:p.nome, depto:p.depto, pages:[i], order:cards.length}; cards.push(cur); }
+      if(!cur.nome && p.nome) cur.nome = p.nome;
+      if(!cur.depto && p.depto) cur.depto = p.depto;
+    } else if(cur){
+      cur.pages.push(i);
+      if(!cur.nome && p.nome) cur.nome = p.nome;
+    }
+  });
+}
+
+/* ---------- lista ---------- */
+document.querySelectorAll('input[name=modo]').forEach(r=>r.addEventListener("change", ()=>{
+  $("listaBox").classList.toggle("hidden", modo()!=="lista");
+}));
+const modo = () => document.querySelector('input[name=modo]:checked').value;
+function parseLista(){
+  const seen = new Set(), out = [];
+  $("lista").value.split(/[\s,;]+/).map(s=>s.trim()).filter(s=>/\d/.test(s)).forEach(s=>{
+    const k = normMat(s); if(!seen.has(k)){ seen.add(k); out.push(s.replace(/\D/g,"")); }
+  });
+  return out;
+}
+$("lista").addEventListener("input", ()=>{ const n=parseLista().length; $("listaCount").textContent = n + (n===1?" matrícula":" matrículas"); });
+$("btnLimpar").addEventListener("click", ()=>{ $("lista").value=""; $("lista").dispatchEvent(new Event("input")); $("csvOpts").style.display="none"; });
+$("btnCsv").addEventListener("click", ()=>$("csv").click());
+let csvRows = [];
+$("csv").addEventListener("change", async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const txt = await f.text();
+  const sep = (txt.split("\n")[0].match(/;/g)||[]).length >= (txt.split("\n")[0].match(/,/g)||[]).length ? ";" : ",";
+  csvRows = txt.split(/\r?\n/).filter(l=>l.trim()).map(l=>l.split(sep).map(c=>c.replace(/^"|"$/g,"").trim()));
+  const head = csvRows[0]||[];
+  const sel = $("csvCol"); sel.innerHTML = "";
+  let guess = head.findIndex(h=>/matr/i.test(h)); if(guess<0) guess = 0;
+  head.forEach((h,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=(h||"Coluna "+(i+1)); sel.appendChild(o); });
+  sel.value = guess; $("csvOpts").style.display="flex"; applyCsv(); e.target.value="";
+});
+function applyCsv(){
+  const col = +$("csvCol").value, start = $("csvHeader").checked ? 1 : 0;
+  $("lista").value = csvRows.slice(start).map(r=>r[col]||"").filter(Boolean).join("\n");
+  $("lista").dispatchEvent(new Event("input"));
+}
+$("csvCol").addEventListener("change", applyCsv);
+$("csvHeader").addEventListener("change", applyCsv);
+
+/* ---------- separar ---------- */
+$("btnSeparar").addEventListener("click", separar);
+function separar(){
+  if(!pages.length) return;
+  const byMat = new Map(); cards.forEach(c=>{ const k=normMat(c.mat); if(!byMat.has(k)) byMat.set(k,[]); byMat.get(k).push(c); });
+  results = []; selectedCards = [];
+  let pedidas = 0, encontradas = 0, nao = 0;
+  if(modo()==="lista"){
+    const lista = parseLista(); pedidas = lista.length;
+    if(!pedidas){ setStatus($("status2"), "Informe ao menos uma matrícula na lista ou escolha Todos os colaboradores.", true); return; }
+    lista.forEach((m,li)=>{
+      const found = byMat.get(normMat(m));
+      if(found){ encontradas++; found.forEach(c=>{ c.listPos = li; selectedCards.push(c); results.push({card:c, status:"ok"}); }); }
+      else { nao++; results.push({card:{mat:m, nome:"", depto:"", pages:[]}, status:"nao"}); }
+    });
+    const pedSet = new Set(lista.map(normMat));
+    cards.forEach(c=>{ if(!pedSet.has(normMat(c.mat))) results.push({card:c, status:"fora"}); });
+  } else {
+    cards.forEach(c=>{ c.listPos = c.order; selectedCards.push(c); results.push({card:c, status:"ok"}); });
+    encontradas = cards.length;
+  }
+  // duplicadas: mesma matrícula em blocos separados
+  const cnt = {}; cards.forEach(c=>{ const k=normMat(c.mat); cnt[k]=(cnt[k]||0)+1; });
+  results.forEach(r=>{ if(r.status==="ok" && cnt[normMat(r.card.mat)]>1) r.dup = true; });
+
+  const selPages = new Set(); selectedCards.forEach(c=>c.pages.forEach(p=>selPages.add(p)));
+  $("sPag").textContent = pages.length; $("sCol").textContent = cards.length;
+  $("sPed").textContent = modo()==="lista" ? pedidas : "—";
+  $("sEnc").textContent = encontradas; $("sNao").textContent = modo()==="lista" ? nao : "—";
+  $("sSel").textContent = selPages.size;
+  $("meta").textContent = [fileName, competencia && ("Competência " + competencia), periodo && ("Período " + periodo)].filter(Boolean).join("  |  ");
+  drawRuler(selPages); drawTable();
+  const has = selectedCards.length>0;
+  $("btnZip").disabled = !has; $("btnUnico").disabled = !has; $("btnRel").disabled = false;
+  const orf = pages.findIndex((p,i)=>!p.mat && !cards.some(c=>c.pages.includes(i)));
+  setStatus($("status2"), has ? (orf>=0 ? "Atenção: há páginas antes do primeiro cartão sem matrícula identificada (em laranja na régua)." : "") : "Nenhum cartão selecionado.", !has);
+  $("resultado").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function drawRuler(selPages){
+  const r = $("ruler"); r.innerHTML = "";
+  const frag = document.createDocumentFragment();
+  const inCard = new Set(); cards.forEach(c=>c.pages.forEach(p=>inCard.add(p)));
+  pages.forEach((p,i)=>{
+    const el = document.createElement("i");
+    if(selPages.has(i)) el.className="s"; else if(!inCard.has(i)) el.className="u";
+    el.title = "Página " + (i+1) + (p.mat ? " — matrícula " + p.mat : "");
+    el.dataset.p = i+1; frag.appendChild(el);
+  });
+  r.appendChild(frag);
+}
+$("ruler").addEventListener("click", e=>{
+  let p = e.target.dataset && e.target.dataset.p;
+  if(!p){ const rect=$("ruler").getBoundingClientRect(); p = Math.min(pages.length, Math.max(1, Math.ceil((e.clientX-rect.left)/rect.width*pages.length))); }
+  showPage(+p);
+});
+
+function drawTable(){
+  const tb = $("tbody"), q = $("filtro").value.trim().toLowerCase();
+  const rows = results.filter(r => !q || [r.card.mat, r.card.nome, r.card.depto].join(" ").toLowerCase().includes(q));
+  if(!rows.length){ tb.innerHTML = '<tr><td colspan="5" class="muted">Nenhum resultado.</td></tr>'; return; }
+  const esc = s => String(s||"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  tb.innerHTML = rows.slice(0,3000).map(r=>{
+    const c = r.card;
+    let tag = r.status==="ok" ? '<span class="tag ok">Encontrada</span>' : r.status==="nao" ? '<span class="tag bad">Não encontrada</span>' : '<span class="tag off">Fora da lista</span>';
+    if(r.dup) tag += ' <span class="tag warn">Repetida no PDF</span>';
+    const pgs = c.pages.length ? '<a data-p="'+(c.pages[0]+1)+'">'+pagesLabel(c.pages)+'</a>' : "—";
+    return '<tr><td class="num">'+esc(c.mat)+'</td><td>'+esc(c.nome)+'</td><td>'+esc(c.depto)+'</td><td>'+tag+'</td><td class="num">'+pgs+'</td></tr>';
+  }).join("");
+}
+$("filtro").addEventListener("input", ()=>{ if(results.length) drawTable(); });
+$("tbody").addEventListener("click", e=>{ const p=e.target.dataset && e.target.dataset.p; if(p) showPage(+p); });
+
+function showPage(n){
+  if(!pages.length) return;
+  n = Math.min(pages.length, Math.max(1, n|0));
+  $("pgNum").value = n; $("det").open = true;
+  $("pgText").textContent = "Página " + n + "\n\n" + (pages[n-1].text || "(sem texto)");
+  $("det").scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+$("btnVer").addEventListener("click", ()=>showPage(+$("pgNum").value));
+
+/* ---------- downloads ---------- */
+function ordered(){
+  const arr = selectedCards.slice(), o = $("ordem").value;
+  const byName = (a,b)=>(a.nome||"").localeCompare(b.nome||"","pt-BR") || normMat(a.mat).localeCompare(normMat(b.mat));
+  if(o==="nome") arr.sort(byName);
+  else if(o==="depto") arr.sort((a,b)=>(a.depto||"").localeCompare(b.depto||"","pt-BR") || byName(a,b));
+  else if(o==="lista") arr.sort((a,b)=>(a.listPos??a.order)-(b.listPos??b.order));
+  else arr.sort((a,b)=>a.order-b.order);
+  return arr;
+}
+function baseName(c){
+  const nome = sanitize(c.nome), mat = c.mat, t = $("nomeArq").value;
+  if(t==="mat" || !nome) return mat;
+  return t==="nome-mat" ? nome + " - " + mat : mat + " - " + nome;
+}
+const compTag = () => competencia ? competencia.replace("/","-") : "";
+function lockButtons(v){ ["btnZip","btnUnico","btnRel","btnSeparar"].forEach(id=>$(id).disabled=v); }
+
+$("btnUnico").addEventListener("click", async ()=>{
+  lockButtons(true); setStatus($("status2"), "Montando o PDF…");
+  try{
+    const src = await PDFLib.PDFDocument.load(pdfBytes, {ignoreEncryption:true});
+    const out = await PDFLib.PDFDocument.create();
+    const idx = []; ordered().forEach(c=>c.pages.forEach(p=>idx.push(p)));
+    const copied = await out.copyPages(src, idx); copied.forEach(p=>out.addPage(p));
+    const bytes = await out.save();
+    download(new Blob([bytes],{type:"application/pdf"}), "Cartoes de ponto" + (compTag()?" "+compTag():"") + ".pdf");
+    setStatus($("status2"), "PDF único gerado com " + idx.length + " páginas.");
+  }catch(err){ console.error(err); setStatus($("status2"), "Erro ao montar o PDF: " + (err.message||err), true); }
+  lockButtons(false);
+});
+
+$("btnZip").addEventListener("click", async ()=>{
+  lockButtons(true);
+  try{
+    const src = await PDFLib.PDFDocument.load(pdfBytes, {ignoreEncryption:true});
+    const zip = new JSZip(), used = new Set(), list = ordered(), porDepto = $("porDepto").checked;
+    for(let i=0;i<list.length;i++){
+      const c = list[i];
+      const out = await PDFLib.PDFDocument.create();
+      const copied = await out.copyPages(src, c.pages); copied.forEach(p=>out.addPage(p));
+      const bytes = await out.save();
+      const folder = porDepto ? (sanitize(c.depto) || "Sem departamento") + "/" : "";
+      let name = folder + baseName(c), k = 2;
+      while(used.has(name.toLowerCase())) name = folder + baseName(c) + " (" + (k++) + ")";
+      used.add(name.toLowerCase());
+      zip.file(name + ".pdf", bytes);
+      if(i%10===0 || i===list.length-1){ setStatus($("status2"), "Gerando arquivo " + (i+1) + " de " + list.length + "…"); await new Promise(r=>setTimeout(r)); }
+    }
+    setStatus($("status2"), "Compactando…");
+    const blob = await zip.generateAsync({type:"blob", compression:"STORE"});
+    download(blob, "Cartoes de ponto" + (compTag()?" "+compTag():"") + ".zip");
+    setStatus($("status2"), "ZIP gerado com " + list.length + " arquivos.");
+  }catch(err){ console.error(err); setStatus($("status2"), "Erro ao gerar o ZIP: " + (err.message||err), true); }
+  lockButtons(false);
+});
+
+$("btnRel").addEventListener("click", ()=>{
+  const q = s => '"' + String(s||"").replace(/"/g,'""') + '"';
+  const st = {ok:"Encontrada", nao:"Não encontrada", fora:"Fora da lista"};
+  const lines = [["Matrícula","Nome","Departamento","Situação","Páginas","Qtde páginas"].map(q).join(";")];
+  results.forEach(r=>lines.push([r.card.mat, r.card.nome, r.card.depto, st[r.status]+(r.dup?" (repetida)":""), pagesLabel(r.card.pages), r.card.pages.length].map(q).join(";")));
+  download(new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}), "Relatorio cartoes" + (compTag()?" "+compTag():"") + ".csv");
+});
+
+/* ---------- reset ---------- */
+function resetResults(){
+  results = []; selectedCards = []; cards = []; pages = [];
+  ["sPag","sCol","sPed","sEnc","sNao","sSel"].forEach(id=>$(id).textContent="0");
+  $("ruler").innerHTML = ""; $("meta").textContent = "";
+  $("tbody").innerHTML = '<tr><td colspan="5" class="muted">Carregue um PDF e clique em Separar cartões.</td></tr>';
+  ["btnZip","btnUnico","btnRel"].forEach(id=>$(id).disabled=true);
+  setStatus($("status2"), ""); $("pgText").textContent = "Escolha uma página para ver o texto lido pelo aplicativo.";
+}
+$("btnReset").addEventListener("click", ()=>{
+  resetResults(); pdfBytes=null; pdfDoc=null; fileName="";
+  $("file").value=""; $("fileinfo").textContent=""; setStatus($("status"),""); $("btnSeparar").disabled=true;
+  $("filtro").value="";
+});
+})();
+</script>
+<script>
+/* LOTES MULTIPLOS POR COMPETENCIA */
+(function(){
+  "use strict";
+  const el = id => document.getElementById(id);
+  const state = {items:[], rows:[], selectedKeys:new Set(), visibleKeys:[], nextUid:1, planRows:[], workbookName:""};
+  const DB_NAME="elecnor-cartoes-ponto", DB_STORE="progresso", DB_KEY="lote-atual";
+  let dbPromise=null, saveTimer=null, restoring=true;
+  const clean = s => String(s||"").replace(/[\\/:*?"<>|]+/g,"").replace(/\s+/g," ").trim();
+  const norm = s => String(s||"").replace(/\D/g,"").replace(/^0+/,"") || "0";
+  function status(text, error){ el("loteStatus").textContent=text; el("loteStatus").className="status"+(error?" err":""); }
+  function saveLabel(text,error){const box=el("salvamentoStatus");box.textContent=text;box.className="muted"+(error?" err":"");}
+  function openProgressDb(){
+    if(!window.indexedDB)return Promise.reject(new Error("ESTE NAVEGADOR NÃO DISPONIBILIZA ARMAZENAMENTO LOCAL."));
+    if(!dbPromise)dbPromise=new Promise((resolve,reject)=>{
+      const request=indexedDB.open(DB_NAME,1);
+      request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(DB_STORE))request.result.createObjectStore(DB_STORE);};
+      request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error("NÃO FOI POSSÍVEL ABRIR O ARMAZENAMENTO LOCAL."));
+      request.onblocked=()=>reject(new Error("O ARMAZENAMENTO LOCAL ESTÁ OCUPADO POR OUTRA ABA."));
+    });
+    return dbPromise;
+  }
+  function transactionDone(tx){return new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve();tx.onabort=tx.onerror=()=>reject(tx.error||new Error("FALHA AO SALVAR O PROGRESSO."));});}
+  async function readProgress(){
+    const db=await openProgressDb();return new Promise((resolve,reject)=>{
+      const tx=db.transaction(DB_STORE,"readonly"),req=tx.objectStore(DB_STORE).get(DB_KEY);
+      req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||new Error("NÃO FOI POSSÍVEL LER O PROGRESSO SALVO."));
+    });
+  }
+  let saveQueue=Promise.resolve();
+  async function writeProgress(){
+    if(restoring)return;
+    const hasWork=state.items.length||state.planRows.length||el("loteMatriculas").value.trim();
+    const db=await openProgressDb(),tx=db.transaction(DB_STORE,"readwrite"),store=tx.objectStore(DB_STORE);
+    if(!hasWork){store.delete(DB_KEY);await transactionDone(tx);saveLabel("LOTE LIMPO. NENHUM PROGRESSO SALVO.");return;}
+    const snapshot={savedAt:Date.now(),nextUid:state.nextUid,workbookName:state.workbookName,planRows:state.planRows,
+      manualMatriculas:el("loteMatriculas").value,filterCompetencia:el("filtroCompetencia").value,filterColaborador:el("filtroColaborador").value,
+      selectedKeys:Array.from(state.selectedKeys),items:state.items.map(it=>({uid:it.uid,key:it.key,fileBlob:it.file.slice(0,it.file.size,it.file.type||"application/pdf"),fileName:it.file.name,fileSize:it.file.size,lastModified:it.file.lastModified,comp:it.comp,manualComp:it.manualComp,status:it.status,parsed:it.parsed,cards:it.cards}))};
+    store.put(snapshot,DB_KEY);await transactionDone(tx);
+    const count=state.items.length,bytes=state.items.reduce((sum,it)=>sum+it.file.size,0);
+    saveLabel("SALVO NESTE NAVEGADOR · "+count+" PDF(S) · "+(bytes/1024/1024).toFixed(1)+" MB · ATUALIZADO "+new Date(snapshot.savedAt).toLocaleTimeString("pt-BR"));
+  }
+  function scheduleSave(){
+    if(restoring)return;clearTimeout(saveTimer);saveLabel("SALVANDO PROGRESSO NESTE NAVEGADOR…");
+    saveTimer=setTimeout(()=>{saveQueue=saveQueue.then(writeProgress).catch(err=>saveLabel("NÃO FOI POSSÍVEL SALVAR: "+(err.message||err),true));},350);
+  }
+  async function restoreProgress(){
+    ["analisarLotes","gerarLotes","limparLotes","importarPlanilha"].forEach(id=>el(id).disabled=true);
+    try{
+      const snapshot=await readProgress();
+      if(snapshot){
+        state.nextUid=snapshot.nextUid||1;state.workbookName=snapshot.workbookName||"";state.planRows=snapshot.planRows||[];state.selectedKeys=new Set(snapshot.selectedKeys||[]);
+        state.items=(snapshot.items||[]).map(saved=>({uid:saved.uid,key:saved.key,file:new File([saved.fileBlob],saved.fileName,{type:"application/pdf",lastModified:saved.lastModified||Date.now()}),comp:saved.comp||"",manualComp:!!saved.manualComp,status:saved.parsed?(saved.status||"LIDO"):"AGUARDANDO LEITURA",bytes:null,pages:[],cards:saved.cards||[],parsed:!!saved.parsed}));
+        el("loteMatriculas").value=snapshot.manualMatriculas||"";el("loteMatriculas").disabled=state.planRows.length>0;
+        el("filtroColaborador").value=snapshot.filterColaborador||"";
+        renderFiles();renderPlanPreview();renderRows();refreshGenerateButton();
+        if(state.planRows.length){el("limparPlanilha").disabled=false;el("planilhaInfo").textContent=state.planRows.length+" LINHA(S) RESTAURADA(S) · "+state.workbookName;el("origemListaAjuda").textContent="PLANILHA RESTAURADA: CADA LINHA DEFINE UMA MATRÍCULA E SUA COMPETÊNCIA.";}
+        if(snapshot.filterCompetencia)el("filtroCompetencia").value=snapshot.filterCompetencia;
+        renderRows();
+        saveLabel("PROGRESSO RESTAURADO · "+state.items.length+" PDF(S) · "+state.planRows.length+" LINHA(S) DE PLANILHA.");
+        status("LOTE RESTAURADO. CONTINUE DE ONDE PAROU.");
+      }else saveLabel("SALVAMENTO AUTOMÁTICO ATIVO NESTE NAVEGADOR.");
+    }catch(err){saveLabel("SALVAMENTO LOCAL INDISPONÍVEL: "+(err.message||err),true);}
+    finally{
+      restoring=false;el("importarPlanilha").disabled=false;el("limparLotes").disabled=false;
+      el("analisarLotes").disabled=false;
+      el("limparPlanilha").disabled=!state.planRows.length;
+      refreshGenerateButton();
+    }
+  }
+  function compFromName(name){
+    let m=String(name).match(/(?:^|\D)(0?[1-9]|1[0-2])[-_. ](20\d{2})(?:\D|$)/);
+    if(m) return m[1].padStart(2,"0")+"/"+m[2];
+    m=String(name).match(/(?:^|\D)(20\d{2})[-_. ](0?[1-9]|1[0-2])(?:\D|$)/);
+    return m ? m[2].padStart(2,"0")+"/"+m[1] : "";
+  }
+  function normalizeComp(value){
+    if(value instanceof Date&&!isNaN(value))return String(value.getUTCMonth()+1).padStart(2,"0")+"/"+value.getUTCFullYear();
+    if(typeof value==="number"&&window.XLSX&&XLSX.SSF){const d=XLSX.SSF.parse_date_code(value);if(d&&d.y&&d.m)return String(d.m).padStart(2,"0")+"/"+d.y;}
+    const s=String(value||"").trim().replace(/[-_. ]/g,"/");
+    let m=s.match(/^(0?[1-9]|1[0-2])\/(\d{4})$/);
+    if(m) return m[1].padStart(2,"0")+"/"+m[2];
+    m=s.match(/^(\d{4})\/(0?[1-9]|1[0-2])$/);
+    if(m)return m[2].padStart(2,"0")+"/"+m[1];
+    const monthMap={JAN:1,JANUARY:1,JAN:1,FEV:2,FEVEREIRO:2,FEB:2,FEBRUARY:2,MAR:3,MARCO:3,APR:4,ABR:4,ABRIL:4,APRIL:4,MAI:5,MAY:5,JUN:6,JUNHO:6,JUL:7,JULHO:7,AUG:8,AGO:8,AGOSTO:8,SEP:9,SET:9,SETEMBRO:9,OCT:10,OUT:10,OUTUBRO:10,NOV:11,NOVEMBRO:11,DEC:12,DEZ:12,DEZEMBRO:12};
+    m=String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().match(/^([A-Z]+)[/\s-]*(\d{4})$/);
+    if(m){const month=monthMap[m[1]]||monthMap[m[1].slice(0,3)];if(month)return String(month).padStart(2,"0")+"/"+m[2];}
+    return "";
+  }
+  function renderFiles(){
+    const box=el("loteLista");
+    if(!state.items.length){ box.innerHTML=""; return; }
+    box.innerHTML='<table class="batch-files"><thead><tr><th>PDF</th><th>COMPETÊNCIA</th><th>STATUS</th><th></th></tr></thead><tbody>'+state.items.map((it,i)=>
+      '<tr><td>'+escapeHtml(it.file.name)+'</td><td><input type="text" data-comp="'+i+'" placeholder="MM/AAAA" value="'+escapeHtml(it.comp)+'"></td><td class="batch-status">'+escapeHtml(it.status)+'</td><td><button type="button" data-remove="'+i+'">REMOVER</button></td></tr>'
+    ).join("")+'</tbody></table>';
+  }
+  function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function normalizeHeader(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]/g,"").toUpperCase();}
+  function planCell(value){
+    if(typeof value==="number"&&Number.isFinite(value))return String(Math.trunc(value));
+    return String(value??"").trim();
+  }
+  function renderPlanPreview(){
+    const detail=el("detalhePlanilha"),body=el("previaPlanilha");
+    if(!state.planRows.length){detail.classList.add("hidden");body.innerHTML="";return;}
+    detail.classList.remove("hidden");el("resumoPlanilha").textContent="CONFERIR PLANILHA: "+state.planRows.length+" LINHA(S) · "+state.workbookName;
+    const preview=state.planRows.slice(0,100);
+    body.innerHTML=preview.map(r=>'<tr><td>'+escapeHtml(r.matricula)+'</td><td>'+escapeHtml(r.nome)+'</td><td>'+escapeHtml(r.funcao)+'</td><td>'+escapeHtml(r.competencia)+'</td></tr>').join("");
+    if(state.planRows.length>preview.length)body.innerHTML+='<tr><td colspan="4">MOSTRANDO AS PRIMEIRAS '+preview.length+' LINHAS; TODAS AS '+state.planRows.length+' LINHAS VÁLIDAS SERÃO PROCESSADAS.</td></tr>';
+  }
+  async function importPlanilha(file){
+    try{
+      if(window.__xlsxLoader)await window.__xlsxLoader;
+      if(!window.XLSX)throw new Error("NÃO FOI POSSÍVEL CARREGAR A LEITURA DE EXCEL. VERIFIQUE A INTERNET E RECARREGUE A PÁGINA.");
+      const workbook=XLSX.read(await file.arrayBuffer(),{cellDates:true});
+      const aliases={matricula:["MATRICULA","MAT","REGISTRO","CHAPA"],nome:["NOME","COLABORADOR","NOMECOMPLETO"],funcao:["FUNCAO","FUNCAORM","FUNCAOBEXUP","CARGO"],competencia:["COMPETENCIA","MESCOMPETENCIA","PERIODO"]};
+      const candidates=[];
+      for(const sheetName of workbook.SheetNames){
+        const sheet=workbook.Sheets[sheetName];if(!sheet)continue;
+        const matrix=XLSX.utils.sheet_to_json(sheet,{header:1,defval:"",raw:false});
+        for(let headerRow=0;headerRow<Math.min(matrix.length,20);headerRow++){
+          const headers=matrix[headerRow].map(normalizeHeader),col={};
+          Object.entries(aliases).forEach(([key,options])=>{col[key]=headers.findIndex(h=>options.includes(h));});
+          if(Object.values(col).some(i=>i<0))continue;
+          const exact=headers.filter(h=>["MATRICULA","NOME","FUNCAO","COMPETENCIA"].includes(h)).length;
+          candidates.push({sheetName,matrix,col,headerRow,score:exact*10+Object.keys(col).length});
+          break;
+        }
+      }
+      candidates.sort((a,b)=>b.score-a.score||a.headerRow-b.headerRow);
+      const selected=candidates[0];
+      if(!selected)throw new Error("NÃO ENCONTREI UMA ABA COM AS COLUNAS MATRÍCULA, NOME, FUNÇÃO E COMPETÊNCIA.");
+      const {matrix,col,headerRow,sheetName}=selected;
+      const rows=[],seen=new Set();let skipped=0,duplicates=0;
+      for(let i=headerRow+1;i<matrix.length;i++){
+        const row=matrix[i];if(!row||row.every(v=>String(v??"").trim()===""))continue;
+        let matricula=planCell(row[col.matricula]).replace(/\D/g,"");
+        if(!matricula){skipped++;continue;}
+        const competencia=normalizeComp(row[col.competencia]);
+        if(!competencia){skipped++;continue;}
+        const item={matricula,nome:planCell(row[col.nome]),funcao:planCell(row[col.funcao]),competencia,sourceRow:i+1};
+        const key=norm(matricula)+"|"+competencia;
+        if(seen.has(key)){duplicates++;continue;}
+        seen.add(key);rows.push(item);
+      }
+      if(!rows.length)throw new Error("NENHUMA LINHA VÁLIDA. VERIFIQUE MATRÍCULA E COMPETÊNCIA.");
+      state.planRows=rows;state.workbookName=file.name+" · ABA: "+sheetName;state.selectedKeys.clear();
+      el("loteMatriculas").disabled=true;el("limparPlanilha").disabled=false;
+      el("planilhaInfo").textContent=rows.length+" LINHA(S) IMPORTADA(S)"+(skipped?" · "+skipped+" LINHA(S) IGNORADA(S) SEM MATRÍCULA/COMPETÊNCIA":"")+(duplicates?" · "+duplicates+" DUPLICATA(S) REMOVIDA(S)":"");
+      el("origemListaAjuda").textContent="A PLANILHA ESTÁ ATIVA: CADA LINHA DEFINE UMA MATRÍCULA E SUA COMPETÊNCIA. A LISTA DIGITADA FICA DESATIVADA ATÉ LIMPAR A PLANILHA.";
+      renderPlanPreview();syncDefaultSelections();renderRows();refreshGenerateButton();
+      scheduleSave();
+      status(rows.length+" REGISTRO(S) DA PLANILHA PRONTO(S). OS CARTÕES SERÃO VINCULADOS À COMPETÊNCIA DE CADA LINHA.");
+    }catch(err){status("NÃO FOI POSSÍVEL IMPORTAR A PLANILHA: "+(err.message||err),true);}
+  }
+  el("importarPlanilha").addEventListener("click",()=>el("arquivoPlanilha").click());
+  el("arquivoPlanilha").addEventListener("change",e=>{const file=e.target.files[0];if(file)importPlanilha(file);e.target.value="";});
+  el("limparPlanilha").addEventListener("click",()=>{
+    state.planRows=[];state.workbookName="";state.selectedKeys.clear();el("loteMatriculas").disabled=false;el("limparPlanilha").disabled=true;
+    el("planilhaInfo").textContent="COLUNAS: MATRÍCULA, NOME, FUNÇÃO E COMPETÊNCIA.";
+    el("origemListaAjuda").textContent="SEM PLANILHA, SOMENTE AS MATRÍCULAS INFORMADAS SERÃO GERADAS. COM PLANILHA, SERÃO CONSIDERADAS AS MATRÍCULAS E COMPETÊNCIAS DE CADA LINHA.";
+    renderPlanPreview();syncDefaultSelections();renderRows();refreshGenerateButton();scheduleSave();status("PLANILHA REMOVIDA. A LISTA MANUAL DE MATRÍCULAS ESTÁ ATIVA.");
+  });
+  function requestedMatriculas(){
+    if(state.planRows.length){const seen=new Set(),out=[];state.planRows.forEach(r=>{const key=norm(r.matricula);if(!seen.has(key)){seen.add(key);out.push(r.matricula);}});return out;}
+    const seen=new Set(),out=[];
+    el("loteMatriculas").value.split(/[\s,;]+/).map(s=>s.replace(/\D/g,"")).filter(Boolean).forEach(m=>{const key=norm(m);if(!seen.has(key)){seen.add(key);out.push(m);}});
+    return out;
+  }
+  function cardKey(it,c){return it.uid+":"+c.order;}
+  function matchingCards(){
+    const out=[];
+    if(state.planRows.length){
+      state.planRows.forEach(job=>{
+        const comp=normalizeComp(job.competencia);
+        state.items.filter(it=>it.parsed&&normalizeComp(it.comp)===comp).forEach(it=>it.cards.forEach(c=>{if(norm(c.mat)===norm(job.matricula))out.push({it,c,key:cardKey(it,c),job});}));
+      });
+      return out;
+    }
+    const ids=new Set(requestedMatriculas().map(norm));
+    state.items.forEach(it=>it.cards.forEach(c=>{if(ids.has(norm(c.mat)))out.push({it,c,key:cardKey(it,c),job:null});}));
+    return out;
+  }
+  function selectedCards(){return matchingCards().filter(x=>state.selectedKeys.has(x.key));}
+  function syncDefaultSelections(){matchingCards().forEach(x=>state.selectedKeys.add(x.key));}
+  function updateCompetenceFilter(){
+    const select=el("filtroCompetencia"),current=select.value;
+    const comps=Array.from(new Set([
+      ...state.items.filter(it=>it.parsed).map(it=>normalizeComp(it.comp)),
+      ...state.planRows.map(r=>normalizeComp(r.competencia))
+    ].filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+    select.innerHTML='<option value="">TODAS AS COMPETÊNCIAS</option>'+comps.map(c=>'<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>').join("");
+    select.value=comps.includes(current)?current:"";
+  }
+  function syncSelectAll(){
+    const box=el("selecionarVisiveis"),keys=state.visibleKeys;
+    const count=keys.filter(k=>state.selectedKeys.has(k)).length;
+    box.checked=keys.length>0&&count===keys.length;box.indeterminate=count>0&&count<keys.length;
+  }
+  function refreshGenerateButton(){
+    const ids=requestedMatriculas(),selected=selectedCards();
+    const ready=state.items.length>0&&state.items.every(it=>it.parsed)&&ids.length>0&&selected.length>0&&selected.every(x=>normalizeComp(x.it.comp));
+    el("loteMatriculaResumo").textContent=(state.planRows.length?state.planRows.length+" LINHA(S) DA PLANILHA":ids.length+" MATRÍCULA(S) INFORMADA(S)")+" · "+matchingCards().length+" CARTÃO(ÕES) ENCONTRADO(S) · "+selected.length+" SELECIONADO(S)";
+    el("gerarLotes").disabled=!ready;
+  }
+  function addFiles(files){
+    const valid=Array.from(files||[]).filter(f=>/\.pdf$/i.test(f.name)||f.type==="application/pdf");
+    if(!valid.length){ status("SELECIONE PELO MENOS UM ARQUIVO PDF.",true); return; }
+    valid.forEach(f=>{
+      const key=[f.name,f.size,f.lastModified].join("|");
+      if(!state.items.some(it=>it.key===key)) state.items.push({uid:state.nextUid++,key,file:f,comp:compFromName(f.name),manualComp:false,status:"AGUARDANDO LEITURA",bytes:null,pages:[],cards:[],parsed:false});
+    });
+    renderFiles(); renderRows(); refreshGenerateButton();
+    scheduleSave();
+    status(state.items.length+" PDF(S) ADICIONADO(S). A COMPETÊNCIA SERÁ LIDA DO CARTÃO; CONFIRA OU PREENCHA A LISTA.");
+  }
+  el("loteDrop").addEventListener("click",()=>{if(!restoring)el("loteFiles").click();});
+  el("loteDrop").addEventListener("keydown",e=>{if(!restoring&&(e.key==="Enter"||e.key===" ")){e.preventDefault();el("loteFiles").click();}});
+  el("loteDrop").addEventListener("dragover",e=>{e.preventDefault();el("loteDrop").classList.add("over");});
+  el("loteDrop").addEventListener("dragleave",()=>el("loteDrop").classList.remove("over"));
+  el("loteDrop").addEventListener("drop",e=>{e.preventDefault();el("loteDrop").classList.remove("over");if(!restoring)addFiles(e.dataTransfer.files);});
+  el("loteFiles").addEventListener("change",e=>{if(!restoring)addFiles(e.target.files);e.target.value="";});
+  el("loteLista").addEventListener("input",e=>{
+    if(e.target.dataset.comp!==undefined){const it=state.items[+e.target.dataset.comp];if(it){it.comp=e.target.value;it.manualComp=true;renderRows();refreshGenerateButton();scheduleSave();}}
+  });
+  el("loteLista").addEventListener("click",e=>{
+    if(e.target.dataset.remove!==undefined){state.items.splice(+e.target.dataset.remove,1);renderFiles();renderRows();refreshGenerateButton();scheduleSave();status(state.items.length+" PDF(S) NA FILA.");}
+  });
+  el("loteMatriculas").addEventListener("input",()=>{syncDefaultSelections();renderRows();refreshGenerateButton();scheduleSave();});
+  el("filtroCompetencia").addEventListener("change",()=>{renderRows();scheduleSave();});
+  el("filtroColaborador").addEventListener("input",()=>{renderRows();scheduleSave();});
+  el("selecionarVisiveis").addEventListener("change",e=>{
+    state.visibleKeys.forEach(k=>e.target.checked?state.selectedKeys.add(k):state.selectedKeys.delete(k));
+    renderRows();refreshGenerateButton();scheduleSave();
+  });
+  el("loteResultado").addEventListener("change",e=>{
+    const key=e.target.dataset.cardKey;
+    if(key){if(e.target.checked)state.selectedKeys.add(key);else state.selectedKeys.delete(key);syncSelectAll();refreshGenerateButton();scheduleSave();}
+  });
+  function linesFromText(tc){
+    const rows=[],buckets=new Map();
+    tc.items.filter(it=>it.str&&it.str.trim()).forEach(it=>{
+      const y=it.transform[5],x=it.transform[4],bucket=Math.floor(y/3);let row=null;
+      for(let b=bucket-1;b<=bucket+1&&!row;b++){const candidates=buckets.get(b)||[];row=candidates.find(r=>Math.abs(r.y-y)<3)||null;}
+      if(!row){row={y,parts:[]};rows.push(row);if(!buckets.has(bucket))buckets.set(bucket,[]);buckets.get(bucket).push(row);}row.parts.push({x,s:it.str});
+    });
+    rows.sort((a,b)=>b.y-a.y);
+    return rows.map(r=>r.parts.sort((a,b)=>a.x-b.x).map(p=>p.s).join(" ").replace(/\s+/g," ").trim());
+  }
+  function parseBatchPage(lines){
+    const text=lines.join("\n"), m=text.match(/MATR[IÍ]CULA\s*:?\s*(\d{2,})/i);
+    let nome="",depto="";
+    const a=text.match(/Assinatura\s+colaborador\s*:\s*(.+)/i);if(a)nome=a[1].replace(/\s*Outros\s*$/i,"").trim();
+    if(!nome&&m){const li=lines.findIndex(l=>/MATR[IÍ]CULA/i.test(l));if(li>0&&/^[A-ZÀ-Ý'´`\s.-]{5,}$/.test(lines[li-1])&&!/CNPJ|ENDERE|CEP/i.test(lines[li-1]))nome=lines[li-1].trim();}
+    const d=text.match(/DEPARTAMENTO\s+(.+?)\s+(?:CARGO|LOCALIZA)/i);if(d)depto=d[1].trim();
+    const c=text.match(/Compet[êe]ncia\s*:?\s*(\d{2}\/\d{4})/i);
+    return {text,mat:m?m[1]:null,nome,depto,comp:c?c[1]:""};
+  }
+  function cardsFromPages(pages){
+    const cards=[];let cur=null;
+    pages.forEach((p,i)=>{
+      if(p.mat){
+        if(cur&&norm(cur.mat)===norm(p.mat))cur.pages.push(i);
+        else{cur={mat:p.mat,nome:p.nome,depto:p.depto,pages:[i],order:cards.length};cards.push(cur);}
+        if(!cur.nome&&p.nome)cur.nome=p.nome;if(!cur.depto&&p.depto)cur.depto=p.depto;
+      }else if(cur){cur.pages.push(i);if(!cur.nome&&p.nome)cur.nome=p.nome;}
+    });
+    return cards;
+  }
+  async function scanOne(it,index,total){
+    it.status="LENDO";renderFiles();status("LENDO PDF "+(index+1)+" DE "+total+": "+it.file.name);
+    it.bytes=new Uint8Array(await it.file.arrayBuffer());
+    const doc=await pdfjsLib.getDocument({data:it.bytes}).promise;
+    const pages=[];
+    try{
+      const pageConcurrency=8;
+      for(let start=1;start<=doc.numPages;start+=pageConcurrency){
+        const end=Math.min(doc.numPages,start+pageConcurrency-1);
+        await Promise.all(Array.from({length:end-start+1},async(_,offset)=>{
+          const i=start+offset,page=await doc.getPage(i);
+          try{const tc=await page.getTextContent();pages[i-1]=parseBatchPage(linesFromText(tc));}
+          finally{page.cleanup();}
+        }));
+        status("LENDO "+it.file.name+": PÁGINA "+end+" DE "+doc.numPages);await new Promise(r=>setTimeout(r));
+      }
+    }finally{await doc.destroy();}
+    if(pages.every(p=>!p.text.trim()))throw new Error("PDF SEM TEXTO LEGÍVEL");
+    it.cards=cardsFromPages(pages);it.parsed=true;
+    const foundComp=pages.find(p=>p.comp);
+    if(foundComp&&!it.manualComp)it.comp=foundComp.comp;
+    it.comp=normalizeComp(it.comp)||"";
+    it.status=it.cards.length?it.cards.length+" CARTÃO(ÕES) IDENTIFICADO(S)":"NENHUMA MATRÍCULA IDENTIFICADA";
+    it.pages=[];it.bytes=null;
+  }
+  function renderRows(){
+    const ids=requestedMatriculas(),groups=new Map();state.visibleKeys=[];updateCompetenceFilter();
+    if(!ids.length){el("loteResultado").innerHTML='<tr><td colspan="9" class="muted">INFORME AS MATRÍCULAS OU IMPORTE UMA PLANILHA.</td></tr>';syncSelectAll();return;}
+    state.items.filter(it=>it.parsed).forEach(it=>{const comp=normalizeComp(it.comp)||"COMPETÊNCIA PENDENTE";if(!groups.has(comp))groups.set(comp,[]);groups.get(comp).push(it);});
+    const rows=[];
+    if(state.planRows.length){
+      state.planRows.forEach(job=>{
+        const comp=normalizeComp(job.competencia),found=[];
+        (groups.get(comp)||[]).forEach(it=>it.cards.filter(c=>norm(c.mat)===norm(job.matricula)).forEach(c=>found.push({it,c,key:cardKey(it,c)})));
+        if(found.length)found.forEach(r=>rows.push({comp,it:r.it,c:r.c,key:r.key,job,status:"ENCONTRADA"}));
+        else if(state.items.length&&state.items.every(it=>it.parsed))rows.push({comp,it:null,c:{mat:job.matricula,nome:job.nome,depto:"",pages:[]},job,status:"NÃO ENCONTRADA"});
+      });
+    }else{
+      groups.forEach((items,comp)=>ids.forEach(id=>{
+        const found=[];items.forEach(it=>it.cards.filter(c=>norm(c.mat)===norm(id)).forEach(c=>found.push({it,c,key:cardKey(it,c)})));
+        if(found.length)found.forEach(r=>rows.push({comp,it:r.it,c:r.c,key:r.key,status:"ENCONTRADA"}));
+        else rows.push({comp,it:null,c:{mat:id,nome:"",depto:"",pages:[]},status:"NÃO ENCONTRADA"});
+      }));
+    }
+    const compFilter=el("filtroCompetencia").value,q=el("filtroColaborador").value.trim().toLocaleLowerCase("pt-BR");
+    const visible=rows.filter(r=>{
+      const text=[r.comp,r.c.mat,r.job&&r.job.nome,r.job&&r.job.funcao,r.c.nome,r.c.depto,r.it&&r.it.file.name].join(" ").toLocaleLowerCase("pt-BR");
+      return (!compFilter||r.comp===compFilter)&&(!q||text.includes(q));
+    });
+    state.visibleKeys=visible.filter(r=>r.key).map(r=>r.key);
+    el("loteResultado").innerHTML=visible.length?visible.map(r=>'<tr><td>'+(r.key?'<input type="checkbox" data-card-key="'+escapeHtml(r.key)+'" '+(state.selectedKeys.has(r.key)?"checked":"")+' aria-label="Selecionar cartão '+escapeHtml(r.c.mat)+' '+escapeHtml(r.comp)+'">':"—")+'</td><td>'+escapeHtml(r.comp)+'</td><td>'+escapeHtml(r.it?r.it.file.name:"—")+'</td><td>'+escapeHtml(r.c.mat)+'</td><td>'+escapeHtml(r.job&&r.job.nome||r.c.nome||"")+'</td><td>'+escapeHtml(r.job&&r.job.funcao||"")+'</td><td>'+escapeHtml(r.c.depto||"")+'</td><td>'+r.c.pages.length+'</td><td>'+(r.status==="ENCONTRADA"?'<span class="tag ok">ENCONTRADA</span>':'<span class="tag bad">NÃO ENCONTRADA</span>')+'</td></tr>').join(""):'<tr><td colspan="9" class="muted">NENHUM CARTÃO CORRESPONDE AOS FILTROS.</td></tr>';
+    syncSelectAll();
+  }
+  async function scanAll(){
+    if(!state.items.length){status("ADICIONE UM OU MAIS PDFs.",true);return;}
+    if(!window.pdfjsLib||!window.PDFLib||!window.JSZip){status("AS BIBLIOTECAS DE PDF NÃO CARREGARAM. RECARREGUE A PÁGINA COM INTERNET.",true);return;}
+    el("analisarLotes").disabled=true;el("gerarLotes").disabled=true;
+    let ok=0,errors=0;
+    const pdfConcurrency=2;
+    for(let start=0;start<state.items.length;start+=pdfConcurrency){
+      const group=state.items.slice(start,start+pdfConcurrency);
+      await Promise.all(group.map(async(it,offset)=>{
+        try{await scanOne(it,start+offset,state.items.length);ok++;}
+        catch(err){it.bytes=null;it.status="ERRO: "+(err.message||err);it.parsed=false;errors++;}
+      }));
+      renderFiles();renderRows();scheduleSave();
+    }
+    syncDefaultSelections();renderRows();refreshGenerateButton();
+    scheduleSave();
+    el("analisarLotes").disabled=false;
+    status(ok+" PDF(S) LIDO(S)"+(errors?"; "+errors+" COM ERRO":"")+". CONFIRA A COMPETÊNCIA ANTES DE GERAR.",errors>0);
+  }
+  el("analisarLotes").addEventListener("click",scanAll);
+  async function generateZip(){
+    const selected=selectedCards();
+    const incomplete=state.items.some(it=>!it.parsed)||selected.some(x=>!normalizeComp(x.it.comp));
+    if(!window.PDFLib||!window.JSZip){status("AS BIBLIOTECAS DE PDF/ZIP NÃO CARREGARAM. RECARREGUE A PÁGINA E TENTE NOVAMENTE.",true);return;}
+    if(incomplete){status("LEIA TODOS OS PDFs E INFORME A COMPETÊNCIA DOS LOTES COM CARTÕES SELECIONADOS.",true);return;}
+    if(!requestedMatriculas().length){status("INFORME AS MATRÍCULAS QUE DESEJA GERAR.",true);return;}
+    if(!selected.length){status("NENHUMA DAS MATRÍCULAS INFORMADAS FOI ENCONTRADA NOS PDFs.",true);return;}
+    el("gerarLotes").disabled=true;el("analisarLotes").disabled=true;
+    try{
+      const zip=new JSZip(),used=new Set();let total=selected.length,done=0;
+      const grouped=new Map();selected.forEach(x=>{if(!grouped.has(x.it))grouped.set(x.it,[]);grouped.get(x.it).push(x);});
+      for(const [it,entries] of grouped){
+        const comp=normalizeComp(it.comp),folder=comp.replace("/","-");
+        let src;
+        try{src=await PDFLib.PDFDocument.load(await it.file.arrayBuffer(),{ignoreEncryption:true});}
+        catch(err){throw new Error("NÃO FOI POSSÍVEL ABRIR O PDF "+it.file.name+": "+(err.message||err));}
+        for(const entry of entries){
+            const {c,job}=entry;
+            if(!Array.isArray(c.pages)||!c.pages.length)throw new Error("O CARTÃO DA MATRÍCULA "+c.mat+" NÃO TEM PÁGINAS IDENTIFICADAS.");
+            if(c.pages.some(p=>!Number.isInteger(p)||p<0||p>=src.getPageCount()))throw new Error("PÁGINA INVÁLIDA NO CARTÃO DA MATRÍCULA "+c.mat+" DO PDF "+it.file.name+".");
+            const out=await PDFLib.PDFDocument.create();
+            const copied=await out.copyPages(src,c.pages);copied.forEach(p=>out.addPage(p));
+            const nameBase=clean(c.mat+" - "+((job&&job.nome)||c.nome||"SEM NOME")+" - "+comp.replace("/","-")).toLocaleUpperCase("pt-BR");
+            let path=folder+"/"+nameBase+".pdf",n=2;
+            while(used.has(path.toLowerCase()))path=folder+"/"+nameBase+" ("+(n++)+").pdf";
+            const bytes=await out.save({useObjectStreams:true});
+            if(!bytes||!bytes.length)throw new Error("O PDF DA MATRÍCULA "+c.mat+" FOI CRIADO VAZIO.");
+            used.add(path.toLowerCase());zip.file(path,bytes,{binary:true});done++;
+            if(done%5===0||done===total){status("MONTANDO PDF "+done+" DE "+total+"...");await new Promise(r=>setTimeout(r));}
+        }
+        src=null;
+      }
+      status("COMPACTANDO OS CARTÕES POR COMPETÊNCIA...");
+      const blob=await zip.generateAsync({type:"blob",compression:"STORE",streamFiles:true},meta=>status("COMPACTANDO ZIP: "+Math.round(meta.percent)+"%"));
+      if(!blob||!blob.size)throw new Error("O ARQUIVO ZIP FICOU VAZIO.");
+      const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="CARTOES_POR_COMPETENCIA.zip";a.style.display="none";document.body.appendChild(a);a.click();
+      setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},60000);
+      status("ZIP GERADO COM "+done+" CARTÃO(ÕES) EM "+new Set(selected.map(x=>normalizeComp(x.it.comp))).size+" COMPETÊNCIA(S) · "+(blob.size/1024/1024).toFixed(1)+" MB.");
+    }catch(err){console.error(err);status("NÃO FOI POSSÍVEL GERAR O ZIP: "+(err.message||err),true);}
+    el("analisarLotes").disabled=false;refreshGenerateButton();
+  }
+  el("gerarLotes").addEventListener("click",generateZip);
+  el("limparLotes").addEventListener("click",()=>{state.items=[];state.planRows=[];state.workbookName="";state.selectedKeys.clear();el("loteFiles").value="";el("loteMatriculas").value="";el("loteMatriculas").disabled=false;el("filtroColaborador").value="";el("filtroCompetencia").value="";el("planilhaInfo").textContent="COLUNAS: MATRÍCULA, NOME, FUNÇÃO E COMPETÊNCIA.";el("origemListaAjuda").textContent="SEM PLANILHA, SOMENTE AS MATRÍCULAS INFORMADAS SERÃO GERADAS. COM PLANILHA, SERÃO CONSIDERADAS AS MATRÍCULAS E COMPETÊNCIAS DE CADA LINHA.";el("limparPlanilha").disabled=true;renderFiles();renderPlanPreview();renderRows();refreshGenerateButton();scheduleSave();status("LOTES E PROGRESSO SALVO REMOVIDOS.");});
+  window.addEventListener("pagehide",()=>{if(!restoring){clearTimeout(saveTimer);saveQueue=saveQueue.then(writeProgress).catch(()=>{});}});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&!restoring){clearTimeout(saveTimer);saveQueue=saveQueue.then(writeProgress).catch(()=>{});}});
+  restoreProgress();
+})();
+</script>
+</body>
+</html>
